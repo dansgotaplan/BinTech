@@ -34,6 +34,29 @@
 //   }
 // }
 
+// vv Alunos vv
+struct Aluno {
+  String codigo;
+  String nome;
+  String turma;
+  int pontos;
+};
+Aluno alunos[7] = {
+  {"12341", "Kauã", "3° TDS A", 0},
+  {"11424", "Daniel", "3° TDS A", 0},
+  {"12234", "Kaio", "3° TDS A", 0},
+  {"11122", "Ingridy", "3° TDS A", 0},
+  {"12212", "Joãozinho", "3° TDS A", 0},
+  {"22143", "Lorenna", "3° TDS A", 0},
+  {"22341", "Norinha", "3° TDS A", 0}
+};
+
+// vv Variáveis vv
+String codigoInput = "";
+int alunoAtual = -1; //Isso aqui é o índice do aluno na lista (^^). -1 é nenhum aluno selecionado
+int pontosSessao = 0; //Pontos na sessão atual
+bool sessaoAtiva = False;
+
 
 #define TRIG 11
 #define ECHO 10
