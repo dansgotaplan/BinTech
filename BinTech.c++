@@ -17,14 +17,28 @@
 //5. Colocar acknowlegements com buzzer e delays uniformemente nos pontos de contenção (fiz na bagunça)
 //6. Agradecer Kaio
 
+//==== PORTAS ====
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(8,9,4,5,6,7);
 #define TRIG 11
 #define ECHO 10
 #define LED 12
 
-enum State{IDLE, LENDO, ATIVO};
+//==== MAGIC NUMBERS ====
+#define DISTANCIA_SENSOR 30
+#define CODIGOSIZE 5
+#define DEBOUNCE 200
+#define PONTOSPORITEM 100
+//bipes
+#define BEEP_CURTO 80
+#define BEEP_MEDIO 250
+#define BEEP_LONGO 700
+//delays
+#define DELAY_CURTO 2000
+#define DELAY_MEDIO 5000
+#define DELAY_LONGO 20000
 
+//==== BANCO DE ALUNOS ====
 struct Aluno {
     String codigo;
     String nome;
@@ -40,15 +54,16 @@ Aluno aluno[] = {
     {"22143", "Lorenna P", "3° TDS A", 0},
     {"22341", "Eduardo N", "3° TDS A", 0}
 };
-//==== VARIÁVEIS GLOBAIS ====
+int quantidadeAlunos = sizeof(aluno)/sizeof(aluno[0]);
 
+//==== VARIÁVEIS GLOBAIS ====
+enum State(IDLE, LENDO, ATIVO);
 String codigoInput = "";
 int indexAlunoAtual = -1;
 int pontosSessao = 0;
 State estado = IDLE;
 
-//==== FUNÇÕES GLOBAIS ====
-
+//==== FUNÇÕES DO SISTEMA ====
 void default() { //Volta as variáveis pro default
     codigoInput = "";
     indexAlunoAtual = -1; //Nenhum
@@ -62,6 +77,13 @@ void beep(int tempo) {
     digitalWrite(BUZZER_PIN, LOW);
 }
 
+void triplebeep(int tempo) {
+    for(int i=0; i<3; i++) {
+        beep(BEEP_CURTO);
+        delay(100);
+    }
+}
+
 //==== FUNÇÕES IDLE ====
 void exibirMensagemInicial() {
     lcd.clear();
@@ -72,32 +94,47 @@ void exibirMensagemInicial() {
 }
 
 //==== FUNÇÕES LENDO ====
-
 void lerCodigo() {
     if (digitalRead(BT1) == LOW) {
         codigoInput += "1";
         estado = LENDO;
-        delay(200);
+        beep(BEEP_CURTO);
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print(codigoInput);
+        delay(DEBOUNCE);
     } else if (digitalRead(BT2) == LOW) {
         codigoInput += "2";
         estado = LENDO;
-        delay(200);
+        beep(BEEP_CURTO);
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print(codigoInput);
+        delay(DEBOUNCE);
     } else if (digitalRead(BT3) == LOW) {
         codigoInput += "3";
         estado = LENDO;
-        delay(200);
+        beep(BEEP_CURTO);
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print(codigoInput);
+        delay(DEBOUNCE);
     } else if (digitalRead(BT4) == LOW) {
         codigoInput += "4";
         estado = LENDO;
-        delay(200);
+        beep(BEEP_CURTO);
+        lcd.clear();
+        lce.setCursor(0,0);
+        lcd.print(codigoInput);
+        delay(DEBOUNCE);
     }
-    if (codigoInput.length() >= 5) {
-        encontrarAluno(codigoInput);
+    if (codigoInput.length() >= codigoSize) {
+        indexAlunoAtual = encontrarAluno(codigoInput);
     }
 }
 
 int encontrarAluno(String codigoInput) {
-    for(int i=0; i<7; i++) { //7 alunos é hardcoded
+    for(int i=0; i<quantidade; i++) {
         if (aluno[i].codigo == codigoInput) {
             return i;
         }
@@ -106,20 +143,20 @@ int encontrarAluno(String codigoInput) {
 }
 
 //==== FUNÇÕES ATIVO ====
-
 void responderDeteccao() {
-    beep(500);
+    beep(BEEP_MEDIO);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Detectado!");
     lcd.setCursor(0,1);
     lcd.print("Aguarde...");
-    pontosSessao += 100;
+    delay(DELAY_CURTO);
+    pontosSessao += PONTOSPORITEM;
     exibirPontos();
 }
 
 void exibirPontos() {
-    beep(1000);
+    beep(BEEP_LONGO);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Pontos:");
@@ -147,24 +184,25 @@ void loop() {
             break;
         case LENDO:
             lerCodigo();
-            int indexAlunoAtual = encontrarAluno(codigoInput); //encontrou o aluno
             if (indexAlunoAtual != -1) {
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print("Olá,");
                 lcd.setCursor(0,1);
                 lcd.print(aluno[indexAlunoAtual].nome);
-                delay(4000);
+                delay(DELAY_MEDIO);
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print("ATIVO");
                 estado = ATIVO;
                 break;
             } else {
+                triplebeep();
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print("NOT FOUND");
-                delay(5000);
+                delay(DELAY_MEDIO);
+                beep(BEEP_LONGO);
                 estado = IDLE;
                 break;
             }
@@ -186,31 +224,33 @@ void loop() {
                 Serial.print(distancia);
                 Serial.print("cm.");
 
-                if (distancia < 30) {
+                if (distancia < DISTANCIA_SENSOR) {
                     digitalWrite(LED, HIGH); //legacy
                     responderDeteccao();
                 } else {
                     digitalWrite(LED, LOW); //legacy
                 }
             } else if (digitalRead(SIM) == LOW) {
+                beep(BEEP_LONGO);
                 aluno[indexAlunoAtual].pontos += pontosSessao;
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print("Sessão Encerrada");
-                delay(2000);
+                delay(DELAY_CURTO);
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print(aluno[indexAlunoAtual].nome);
                 lcd.setCursor(0,1);
                 lcd.print(aluno[indexAlunoAtual].pontos);
                 lcd.print("pts");
-                delay(20000);
+                delay(DELAY_LONGO);
                 estado = IDLE;
             } else if (digitalRead(NAO) == LOW) {
                 //exibe alguma mensagem
+                triplebeep();
                 estado = IDLE;
             }
-            delay(200);
+            delay(DEBOUNCE);
             break;
     }
 }
