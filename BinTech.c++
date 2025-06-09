@@ -19,11 +19,11 @@
 
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(8,9,4,5,6,7);
-#define TRIG 11;
-#define ECHO 10;
-#define LED 12;
+#define TRIG 11
+#define ECHO 10
+#define LED 12
 
-enum State{"IDLE", "LENDO", "ATIVO"};
+enum State{IDLE, LENDO, ATIVO};
 
 struct Aluno {
     String codigo;
@@ -31,7 +31,7 @@ struct Aluno {
     String turma;
     int pontos;
 };
-Aluno aluno[] {
+Aluno aluno[] = {
     {"12341", "Kauã Y", "3° TDS A", 0},
     {"11424", "V Daniel", "3° TDS A", 0},
     {"12234", "Kaio A", "3° TDS A", 0},
@@ -40,14 +40,20 @@ Aluno aluno[] {
     {"22143", "Lorenna P", "3° TDS A", 0},
     {"22341", "Eduardo N", "3° TDS A", 0}
 };
+//==== VARIÁVEIS GLOBAIS ====
+
+String codigoInput = "";
+int indexAlunoAtual = -1;
+int pontosSessao = 0;
+State estado = IDLE;
 
 //==== FUNÇÕES GLOBAIS ====
 
 void default() { //Volta as variáveis pro default
-    String codigoInput = "";
-    int indexAlunoAtual = -1; //Nenhum
-    int pontosSessao = 0;
-    State estado = "IDLE";
+    codigoInput = "";
+    indexAlunoAtual = -1; //Nenhum
+    pontosSessao = 0;
+    estado = IDLE;
 }
 
 void beep(int tempo) {
@@ -58,42 +64,35 @@ void beep(int tempo) {
 
 //==== FUNÇÕES IDLE ====
 void exibirMensagemInicial() {
-    lcd.clear;
+    lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("BinTech");
     lcd.setCursor(0,1);
     lcd.print("Inserir código");
 }
 
-void idleRouter() { //Roteia para outro modo 
-    if (digitalRead(BT1) == LOW) {
-        codigoInput += "1";
-        State estado = "LENDO";
-    } else if (digitalRead(BT2) == LOW) {
-        codigoInput += "2";
-        State estado = "LENDO";
-    } else if (digitalRead(BT3) == LOW) {
-        codigoInput += "3";
-        State estado = "LENDO";
-    } else if (digitalRead(BT4) == LOW) {
-        codigoInput += "4";
-        State estado = "LENDO"
-    }
-}
-
 //==== FUNÇÕES LENDO ====
 
 void lerCodigo() {
-    while (codigoInput.length() < 5) {
-        if (digitalRead(BT1) == LOW) {
-            codigoInput += "1";
-        } else if (digitalRead(BT2) == LOW) {
-            codigoInput += "2";
-        } else if (digitalRead(BT3) == LOW) {
-            codigoInput += "3";
-        } else if (digitakRead(BT4) == LOW) {
-            codigoInput += "4";
-        }
+    if (digitalRead(BT1) == LOW) {
+        codigoInput += "1";
+        estado = LENDO;
+        delay(200);
+    } else if (digitalRead(BT2) == LOW) {
+        codigoInput += "2";
+        estado = LENDO;
+        delay(200);
+    } else if (digitalRead(BT3) == LOW) {
+        codigoInput += "3";
+        estado = LENDO;
+        delay(200);
+    } else if (digitalRead(BT4) == LOW) {
+        codigoInput += "4";
+        estado = LENDO;
+        delay(200);
+    }
+    if (codigoInput.length() >= 5) {
+        encontrarAluno(codigoInput);
     }
 }
 
@@ -108,11 +107,11 @@ int encontrarAluno(String codigoInput) {
 
 //==== FUNÇÕES ATIVO ====
 
-void responderDeteccao {
+void responderDeteccao() {
     beep(500);
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print("Detectado!")
+    lcd.print("Detectado!");
     lcd.setCursor(0,1);
     lcd.print("Aguarde...");
     pontosSessao += 100;
@@ -142,11 +141,11 @@ void setup() {
 
 void loop() {
     switch(estado) {
-        case "IDLE":
+        case IDLE:
             exibirMensagemInicial();
-            idleRouter();
+            lerCodigo();
             break;
-        case "LENDO:
+        case LENDO:
             lerCodigo();
             int indexAlunoAtual = encontrarAluno(codigoInput); //encontrou o aluno
             if (indexAlunoAtual != -1) {
@@ -159,17 +158,17 @@ void loop() {
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print("ATIVO");
-                State estado = "ATIVO";
+                estado = ATIVO;
                 break;
             } else {
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print("NOT FOUND");
                 delay(5000);
-                State estado = "IDLE";
+                estado = IDLE;
                 break;
             }
-        case "ATIVO":
+        case ATIVO:
             if (digitalRead(NAO) == HIGH) {
                 long duracao;
                 float distancia;
@@ -181,7 +180,7 @@ void loop() {
                 digitalWrite(TRIG, LOW);
 
                 duracao = pulseIn(ECHO, HIGH);
-                distancia = duracao*0.034/2
+                distancia = duracao*0.034/2;
 
                 Serial.print("Distancia: ");
                 Serial.print(distancia);
@@ -201,15 +200,15 @@ void loop() {
                 delay(2000);
                 lcd.clear();
                 lcd.setCursor(0,0);
-                lcd.print(aluno[indexAlunoAtual].nome];
+                lcd.print(aluno[indexAlunoAtual].nome);
                 lcd.setCursor(0,1);
-                lcd.print(aluno[indexAlunoAtual].pontos];
+                lcd.print(aluno[indexAlunoAtual].pontos);
                 lcd.print("pts");
                 delay(20000);
-                State estado = "IDLE";
+                estado = IDLE;
             } else if (digitalRead(NAO) == LOW) {
                 //exibe alguma mensagem
-                State estado = "IDLE";
+                estado = IDLE;
             }
             delay(200);
             break;
