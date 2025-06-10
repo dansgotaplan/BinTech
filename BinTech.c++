@@ -94,42 +94,65 @@ void exibirMensagemInicial() {
 }
 
 //==== FUNÇÕES LENDO ====
-void lerCodigo() {
-    if (digitalRead(BT1) == LOW) {
-        codigoInput += "1";
-        estado = LENDO;
-        beep(BEEP_CURTO);
-        lcd.clear();
-        lcd.setCursor(0,0);
-        lcd.print(codigoInput);
-        delay(DEBOUNCE);
-    } else if (digitalRead(BT2) == LOW) {
-        codigoInput += "2";
-        estado = LENDO;
-        beep(BEEP_CURTO);
-        lcd.clear();
-        lcd.setCursor(0,0);
-        lcd.print(codigoInput);
-        delay(DEBOUNCE);
-    } else if (digitalRead(BT3) == LOW) {
-        codigoInput += "3";
-        estado = LENDO;
-        beep(BEEP_CURTO);
-        lcd.clear();
-        lcd.setCursor(0,0);
-        lcd.print(codigoInput);
-        delay(DEBOUNCE);
-    } else if (digitalRead(BT4) == LOW) {
-        codigoInput += "4";
-        estado = LENDO;
-        beep(BEEP_CURTO);
-        lcd.clear();
-        lce.setCursor(0,0);
-        lcd.print(codigoInput);
-        delay(DEBOUNCE);
-    }
-    if (codigoInput.length() >= codigoSize) {
-        indexAlunoAtual = encontrarAluno(codigoInput);
+
+void processarBotao() { //experimental
+    if (estado == IDLE || estado == LENDO) {
+        if (digitalRead(BT1) == LOW) {
+            codigoInput += "1";
+            estado = LENDO;
+            beep(BEEP_CURTO);
+            lcd.clear();
+            lcd.setCursor(0,0);
+            lcd.print(codigoInput);
+            delay(DEBOUNCE);
+        } else if (digitalRead(BT2) == LOW) {
+            codigoInput += "2";
+            estado = LENDO;
+            beep(BEEP_CURTO);
+            lcd.clear();
+            lcd.SetCursor(0,0);
+            lcd.print(codigoInput);
+            delay(DEBOUNCE);
+        } else if (digitalRead(BT3) == LOW) {
+            codigoInput += "3";
+            estado = LENDO;
+            beep(BEEP_CURTO);
+            lcd.clear();
+            lcd.setCursor(0,0);
+            lcd.print(codigoInput);
+            delay(DEBOUNCE);
+        } else if (digitalRead(BT4) == LOW) {
+            codigoInput += "4";
+            estado = LENDO;
+            beep(BEEP_CURTOS);
+            lcd.clear();
+            lcd.setCursor(0,0);
+            lcd.print(codigoInput);
+            delay(DEBOUNCE);
+        } else if (digitalRead(NAO) == LOW) {
+            triplebeep();
+            estado = IDLE; //aqui, o comportamento é RESETAR PARA IDLE
+        } else if (digitalRead(SIM) == LOW) {
+            //sem comportamento definido para SIM no estado IDLE ou LENDO
+        }
+        if (codigoInput.length() >= CODIGOSIZE) {
+            indexAlunoAtual = encontrarAluno(codigoInput);
+        }
+    } else { //se o caso for ATIVO
+        if (digitalRead(BT1) == LOW) {
+            //sem comportamento definido para numéricos em ATIVO
+        } else if (digitalRead(BT2) == LOW) {
+            //sem comportamento definido para numéricos em ATIVO
+        } else if (digitalRead(BT3) == LOW) {
+            //sem comportamento definido para numéricos em ATIVO
+        } else if (digitalRead(BT4) == LOW) {
+            //sem comportamento definido para numéricos en ATIVO
+        } else if (digitalRead(SIM) == LOW) {
+            finalizarSessao();
+        } else if (digitalRead(NAO) == LOW) {
+            triplebeep();
+            estado = IDLE; //comportamento = RESETAR PARA IDLE
+        }
     }
 }
 
@@ -139,7 +162,7 @@ int encontrarAluno(String codigoInput) {
             return i;
         }
     }
-    return -1; //Não encontrado
+    return -2; //Não encontrado
 }
 
 //==== FUNÇÕES ATIVO ====
@@ -224,11 +247,11 @@ void loop() {
         case IDLE:
             resetar();
             exibirMensagemInicial();
-            lerCodigo();
+            processarBotao();
             break;
         case LENDO:
-            lerCodigo();
-            if (indexAlunoAtual != -1) {
+            processarBotao();
+            if (indexAlunoAtual != -1 && indexAlunoAtual != -2) { //-1 = resetado, -2 = não encontrado
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print("Olá,");
@@ -240,7 +263,7 @@ void loop() {
                 lcd.print("ATIVO");
                 estado = ATIVO;
                 break;
-            } else {
+            } else if (indexAlunoAtual = -2) { //aluno não encontrado
                 triplebeep();
                 lcd.clear();
                 lcd.setCursor(0,0);
@@ -251,14 +274,9 @@ void loop() {
                 break;
             }
         case ATIVO:
+            processarBotao();
             if (digitalRead(NAO) == HIGH) {
                 detectarItem();
-            } else if (digitalRead(SIM) == LOW) {
-                finalizarSessao();
-            } else if (digitalRead(NAO) == LOW) {
-                //exibe alguma mensagem
-                triplebeep();
-                estado = IDLE;
             }
             delay(DEBOUNCE);
             break;
