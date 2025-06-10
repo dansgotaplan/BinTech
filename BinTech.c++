@@ -64,7 +64,7 @@ int pontosSessao = 0;
 State estado = IDLE;
 
 //==== FUNÇÕES DO SISTEMA ====
-void default() { //Volta as variáveis pro default
+void resetar() { //Volta as variáveis pro default
     codigoInput = "";
     indexAlunoAtual = -1; //Nenhum
     pontosSessao = 0;
@@ -143,6 +143,32 @@ int encontrarAluno(String codigoInput) {
 }
 
 //==== FUNÇÕES ATIVO ====
+
+void detectarItem() {
+    long duracao;
+    float distancia;
+
+    digitalWrite(TRIG, LOW);
+    delayMicroseconds(0.1);
+    digitalWrite(TRIG, HIGH);
+    delayMicroseconds(1);
+    digitalWrite(TRIG, LOW);
+
+    duracao = pulseIn(ECHO, HIGH);
+    distancia = duracao*0.034/2;
+
+    Serial.print("Distancia: ");
+    Serial.print(distancia);
+    Serial.print("cm.");
+
+    if (distancia < DISTANCIA_SENSOR) {
+        digitalWrite(LED, HIGH); //legacy
+        responderDeteccao();
+    } else {
+        digitalWrite(LED, LOW); //legacy
+    }
+}
+
 void responderDeteccao() {
     beep(BEEP_MEDIO);
     lcd.clear();
@@ -164,6 +190,23 @@ void exibirPontos() {
     lcd.print(pontosSessao);
 }
 
+void finalizarSessao() {
+    beep(BEEP_LONGO);
+    aluno[indexAlunoAtual].pontos += pontosSessao;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Sessão Encerrada");
+    delay(DELAY_CURTO);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print(aluno[indexAlunoAtual].nome);
+    lcd.setCursor(0,1);
+    lcd.print(aluno[indexAlunoAtual].pontos);
+    lcd.print("pts");
+    delay(DELAY_LONGO);
+    estado = IDLE;
+}
+
 //==== SETUP E LOOP ==== (manter no final)
 void setup() {
     Serial.begin(9600);
@@ -173,12 +216,13 @@ void setup() {
     
     lcd.begin(16,2);
     exibirMensagemInicial();
-    default();
+    resetar();
 }
 
 void loop() {
     switch(estado) {
         case IDLE:
+            resetar();
             exibirMensagemInicial();
             lerCodigo();
             break;
@@ -208,43 +252,9 @@ void loop() {
             }
         case ATIVO:
             if (digitalRead(NAO) == HIGH) {
-                long duracao;
-                float distancia;
-
-                digitalWrite(TRIG, LOW);
-                delayMicroseconds(0.1);
-                digitalWrite(TRIG, HIGH);
-                delayMicroseconds(1);
-                digitalWrite(TRIG, LOW);
-
-                duracao = pulseIn(ECHO, HIGH);
-                distancia = duracao*0.034/2;
-
-                Serial.print("Distancia: ");
-                Serial.print(distancia);
-                Serial.print("cm.");
-
-                if (distancia < DISTANCIA_SENSOR) {
-                    digitalWrite(LED, HIGH); //legacy
-                    responderDeteccao();
-                } else {
-                    digitalWrite(LED, LOW); //legacy
-                }
+                detectarItem();
             } else if (digitalRead(SIM) == LOW) {
-                beep(BEEP_LONGO);
-                aluno[indexAlunoAtual].pontos += pontosSessao;
-                lcd.clear();
-                lcd.setCursor(0,0);
-                lcd.print("Sessão Encerrada");
-                delay(DELAY_CURTO);
-                lcd.clear();
-                lcd.setCursor(0,0);
-                lcd.print(aluno[indexAlunoAtual].nome);
-                lcd.setCursor(0,1);
-                lcd.print(aluno[indexAlunoAtual].pontos);
-                lcd.print("pts");
-                delay(DELAY_LONGO);
-                estado = IDLE;
+                finalizarSessao();
             } else if (digitalRead(NAO) == LOW) {
                 //exibe alguma mensagem
                 triplebeep();
