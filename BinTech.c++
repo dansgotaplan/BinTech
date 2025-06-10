@@ -1,6 +1,3 @@
-//Tentativa no. 3
-//Tempo gasto: 1h36min ;)
-
 //==== MÁQUINA DE ESTADO (SM) ====
 //1. Os estados são usados como switch no void loop(), pra identificar em que ponto da operação o usuário está.
 //2. Cada estado tem funções específicas, favor indicar.
@@ -57,7 +54,7 @@ Aluno aluno[] = {
 int quantidadeAlunos = sizeof(aluno)/sizeof(aluno[0]);
 
 //==== VARIÁVEIS GLOBAIS ====
-enum State(IDLE, LENDO, ATIVO);
+enum State{IDLE, LENDO, ATIVO};
 String codigoInput = "";
 int indexAlunoAtual = -1;
 int pontosSessao = 0;
@@ -77,7 +74,7 @@ void beep(int tempo) {
     digitalWrite(BUZZER_PIN, LOW);
 }
 
-void triplebeep(int tempo) {
+void triplebeep() {
     for(int i=0; i<3; i++) {
         beep(BEEP_CURTO);
         delay(100);
@@ -110,7 +107,7 @@ void processarBotao() { //experimental
             estado = LENDO;
             beep(BEEP_CURTO);
             lcd.clear();
-            lcd.SetCursor(0,0);
+            lcd.setCursor(0,0);
             lcd.print(codigoInput);
             delay(DEBOUNCE);
         } else if (digitalRead(BT3) == LOW) {
@@ -124,7 +121,7 @@ void processarBotao() { //experimental
         } else if (digitalRead(BT4) == LOW) {
             codigoInput += "4";
             estado = LENDO;
-            beep(BEEP_CURTOS);
+            beep(BEEP_CURTO);
             lcd.clear();
             lcd.setCursor(0,0);
             lcd.print(codigoInput);
@@ -157,7 +154,7 @@ void processarBotao() { //experimental
 }
 
 int encontrarAluno(String codigoInput) {
-    for(int i=0; i<quantidade; i++) {
+    for(int i=0; i<quantidadeAlunos; i++) {
         if (aluno[i].codigo == codigoInput) {
             return i;
         }
@@ -263,7 +260,7 @@ void loop() {
                 lcd.print("ATIVO");
                 estado = ATIVO;
                 break;
-            } else if (indexAlunoAtual = -2) { //aluno não encontrado
+            } else if (indexAlunoAtual == -2) { //aluno não encontrado
                 triplebeep();
                 lcd.clear();
                 lcd.setCursor(0,0);
